@@ -10,6 +10,7 @@ go mod tidy
 go build -o ../output/server
 cd ..
 cd client
+go mod tidy
 go build -o ../output/client
 cd ..
 echo 'Done'
