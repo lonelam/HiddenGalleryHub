@@ -1,3 +1,4 @@
+echo 'Building...'
 mkdir output
 cd gallery-web-app
 npm install

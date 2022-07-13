@@ -4,10 +4,13 @@ import (
 	"HiddenGalleryHub/server/connections"
 	"HiddenGalleryHub/server/models"
 	"HiddenGalleryHub/server/routes"
+	"flag"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+var flagPort = flag.String("port", "5555", "the hosting port")
 
 func main() {
 	db, err := gorm.Open(sqlite.Open("../gallery.db"), &gorm.Config{})
@@ -18,9 +21,7 @@ func main() {
 	models.Migrate(db)
 	models.Init(db)
 	pool := connections.CreatePool()
-	routes.RunWithWebsocketUpgrader("localhost:5555", pool, db)
-
-	// autotls.Run(router, "localhost:5555")
+	routes.RunWithWebsocketUpgrader("localhost:"+*flagPort, pool, db)
 
 	<-pool.Done
 }
