@@ -45,7 +45,7 @@ func AddFileInfoByIdApi(router *gin.Engine, pool *connections.Pool, db *gorm.DB)
 
 func AddFileByIdApi(router *gin.Engine, pool *connections.Pool, db *gorm.DB) {
 
-	router.GET("api/file/:id/*", func(c *gin.Context) {
+	router.GET("api/file/:id/:name", func(c *gin.Context) {
 		fileID, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
