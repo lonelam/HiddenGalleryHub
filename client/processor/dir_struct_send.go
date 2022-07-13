@@ -37,16 +37,33 @@ func (c *WsClientConnection) onRequestDirectorySendAllDirectories(message []byte
 	}
 	fileArr := make([]messages.FileEntry, 0)
 	// log.Printf("root:%s relative: %s startpath: %s\n", c.rootDir, requestDirectory.RelativePath, startPath)
-	collectDirectoryStructure(c.rootDir, startPath, &directoryArr, &fileArr)
+	collectDirectoryStructure(c.rootDir, startPath, &directoryArr, &fileArr, false)
 	dirStruct := messages.DirectoryStructureMessage{
 		DirectoryEntries: directoryArr,
 		FileEntries:      fileArr,
 	}
 	dirStructMsg, _ := json.Marshal(dirStruct)
 	ws.SendMessage(c.conn, messages.MessageTypeDirectoryStructure, dirStructMsg)
+
+	go func() {
+		directoryArr := make([]messages.DirectoryEntry, 1)
+		directoryArr[0] = messages.DirectoryEntry{
+			Name:               path.Base(startPath),
+			RelativePath:       startRelPath,
+			ParentRelativePath: path.Dir(startRelPath),
+		}
+		fileArr := make([]messages.FileEntry, 0)
+		collectDirectoryStructure(c.rootDir, startPath, &directoryArr, &fileArr, true)
+		dirStruct := messages.DirectoryStructureMessage{
+			DirectoryEntries: directoryArr,
+			FileEntries:      fileArr,
+		}
+		dirStructMsg, _ := json.Marshal(dirStruct)
+		ws.SendMessage(c.conn, messages.MessageTypeDirectoryStructure, dirStructMsg)
+	}()
 }
 
-func collectDirectoryStructure(rootPath string, startPath string, directoryArr *[]messages.DirectoryEntry, fileArr *[]messages.FileEntry) {
+func collectDirectoryStructure(rootPath string, startPath string, directoryArr *[]messages.DirectoryEntry, fileArr *[]messages.FileEntry, extractThumbnail bool) {
 	parentRelPath, _ := filepath.Rel(rootPath, startPath)
 	dirEntries, err := os.ReadDir(startPath)
 	if err != nil {
@@ -61,13 +78,13 @@ func collectDirectoryStructure(rootPath string, startPath string, directoryArr *
 				RelativePath:       filepath.Join(parentRelPath, dirEntry.Name()),
 				ParentRelativePath: parentRelPath,
 			})
-			collectDirectoryStructure(rootPath, filepath.Join(startPath, dirEntry.Name()), directoryArr, fileArr)
+			collectDirectoryStructure(rootPath, filepath.Join(startPath, dirEntry.Name()), directoryArr, fileArr, extractThumbnail)
 		} else {
 			fileInfo, _ := dirEntry.Info()
 			thumbnail := ""
 			thumbnailWidth := 1024
 			thumbnailHeight := 1024
-			if isImage(dirEntry.Name()) {
+			if extractThumbnail && isImage(dirEntry.Name()) {
 				handler, _ := os.Open(filepath.Join(startPath, dirEntry.Name()))
 				srcImage, _, _ := image.Decode(handler)
 				originalHeight := srcImage.Bounds().Max.Y

@@ -78,7 +78,7 @@ export function GalleryPage(props: IGalleryPageProps) {
     {setCurrentDirId(dirData.Info.ParentDirectoryId);}
   },[dirData?.Info.ParentDirectoryId]);
   const onPhotoClick = React.useCallback((_: any, photo: Photo) => {
-    window.open(`/api/file/${photo.key}`)
+    window.open(`/api/file/${photo.key}/${encodeURIComponent(photo.title || '')}`)
   }, [])
   return (
     <div className={$style['gallery-frame']}>

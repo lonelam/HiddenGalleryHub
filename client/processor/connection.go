@@ -15,9 +15,10 @@ type WsClientConnection struct {
 	rootDir string
 	config  *constants.AppConfiguration
 	fileMu  *sync.Mutex
+	name    string
 }
 
-func CreateWsConnection(url string, rootDir string) *WsClientConnection {
+func CreateWsConnection(url string, rootDir string, name string) *WsClientConnection {
 
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
@@ -30,6 +31,7 @@ func CreateWsConnection(url string, rootDir string) *WsClientConnection {
 			ClientBufferSize: 1024 * 1024,
 		},
 		fileMu: &sync.Mutex{},
+		name:   name,
 	}
 }
 

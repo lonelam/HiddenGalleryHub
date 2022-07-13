@@ -11,6 +11,7 @@ import (
 
 var addr = flag.String("addr", "laizn.com", "http service address")
 var rootDir = flag.String("root", ".", "the root dir to search images")
+var name = flag.String("name", "home", "the name to identify machines")
 
 func main() {
 	flag.Parse()
@@ -20,7 +21,7 @@ func main() {
 	u := url.URL{Scheme: "wss", Host: *addr, Path: "/ws/"}
 	log.Printf("connecting to %s", u.String())
 
-	c := processor.CreateWsConnection(u.String(), *rootDir)
+	c := processor.CreateWsConnection(u.String(), *rootDir, *name)
 
 	done := c.StartUp()
 

@@ -8,7 +8,7 @@ import (
 
 func (c *WsClientConnection) onInitSendMachineInfo() {
 	machineInfo := messages.MachineInfoMessage{
-		MachineName: "9527",
+		MachineName: c.name,
 		PasswdSum:   "",
 	}
 	machineInfoMsg, _ := json.Marshal(machineInfo)
