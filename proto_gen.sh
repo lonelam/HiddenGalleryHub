@@ -1,0 +1,1 @@
+protoc --proto_path=common/proto --go_out=. message.proto
