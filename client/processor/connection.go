@@ -5,6 +5,7 @@ import (
 	"HiddenGalleryHub/common/messages"
 	"HiddenGalleryHub/common/ws"
 	"log"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,6 +14,7 @@ type WsClientConnection struct {
 	conn    *websocket.Conn
 	rootDir string
 	config  *constants.AppConfiguration
+	fileMu  *sync.Mutex
 }
 
 func CreateWsConnection(url string, rootDir string) *WsClientConnection {
@@ -27,6 +29,7 @@ func CreateWsConnection(url string, rootDir string) *WsClientConnection {
 		config: &constants.AppConfiguration{
 			ClientBufferSize: 1024 * 1024,
 		},
+		fileMu: &sync.Mutex{},
 	}
 }
 

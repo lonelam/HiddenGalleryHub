@@ -80,6 +80,7 @@ func ProcessDirectoryStructure(machine *models.Machine, msg *messages.DirectoryS
 		}).Find(&readingDirectory)
 		if result.RowsAffected > 0 {
 			readingDirectory.IsInvalid = false
+			readingDirectory.Name = dir.Name
 			db.Save(&readingDirectory)
 		} else {
 			readingDirectory = models.Directory{
@@ -103,11 +104,20 @@ func ProcessDirectoryStructure(machine *models.Machine, msg *messages.DirectoryS
 		}).Find(&readingFileEntry)
 		if result.RowsAffected > 0 {
 			readingFileEntry.IsInvalid = false
+			readingFileEntry.Name = file.Name
+			readingFileEntry.FileSize = file.FileSize
+			readingFileEntry.Thumbnail = file.Thumbnail
+			readingFileEntry.ThumbnailHeight = file.ThumbnailHeight
+			readingFileEntry.ThumbnailWidth = file.ThumbnailWidth
 			db.Save(readingFileEntry)
 		} else {
 			readingFileEntry = models.FileEntry{
 				Name:              file.Name,
 				RelativePath:      file.RelativePath,
+				FileSize:          file.FileSize,
+				Thumbnail:         file.Thumbnail,
+				ThumbnailHeight:   file.ThumbnailHeight,
+				ThumbnailWidth:    file.ThumbnailWidth,
 				MachineId:         machine.ID,
 				IsInvalid:         false,
 				ParentDirectoryId: dirIdMap[file.ParentRelativePath],

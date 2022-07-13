@@ -20,6 +20,10 @@ type FileEntry struct {
 	Name               string
 	RelativePath       string
 	ParentRelativePath string
+	Thumbnail          string
+	ThumbnailHeight    int
+	ThumbnailWidth     int
+	FileSize           uint
 }
 
 type DirectoryEntry struct {

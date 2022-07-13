@@ -10,7 +10,7 @@ import (
 )
 
 var addr = flag.String("addr", "localhost:5555", "http service address")
-var rootDir = flag.String("root", "D:\\摄影素材", "the root dir to search images")
+var rootDir = flag.String("root", ".", "the root dir to search images")
 
 func main() {
 

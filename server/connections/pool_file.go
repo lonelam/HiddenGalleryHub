@@ -17,10 +17,10 @@ func (pool *Pool) GetFileFromRemote(fileEntry *models.FileEntry) (chan []byte, e
 	go func() {
 		defer close(resultChan)
 		bufferChan := make(chan []byte)
-		// mu := pool.MutexMap[fileEntry.Machine.Name]
+		mu := pool.MutexMap[fileEntry.Machine.Name]
 		conn := pool.ConnectionMap[fileEntry.Machine.Name]
-		// mu.Lock()
-		// defer mu.Unlock()
+		mu.Lock()
+		defer mu.Unlock()
 		pool.CurrentFileChannel[fileEntry.Machine.Name] = bufferChan
 		defer func() { pool.CurrentFileChannel[fileEntry.Machine.Name] = nil }()
 		reqMsg, _ := json.Marshal(&messages.RequestFileMessage{
@@ -30,11 +30,11 @@ func (pool *Pool) GetFileFromRemote(fileEntry *models.FileEntry) (chan []byte, e
 		for {
 			buffer, ok := <-bufferChan
 			log.Printf("buffer received: %d\n", len(buffer))
-			resultChan <- buffer
 			if !ok {
 				log.Printf("buffer closed.\n")
 				break
 			}
+			resultChan <- buffer
 		}
 	}()
 	return resultChan, nil
