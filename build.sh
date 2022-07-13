@@ -13,4 +13,5 @@ cd client
 go mod tidy
 go build -o ../output/client
 cd ..
+tar -zcvf output.tar.gz output
 echo 'Done'

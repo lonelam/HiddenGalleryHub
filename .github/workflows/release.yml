@@ -30,6 +30,6 @@ jobs:
       uses: ncipollo/release-action@v1.10.0
       with:
         allowUpdates: true
-        artifacts: ./output
+        artifacts: ./output.tar.gz
         prerelease: true
 

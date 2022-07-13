@@ -1,3 +1,5 @@
 /gallery.db
 node_modules
 /output
+/output.zip
+/output.tar.gz
