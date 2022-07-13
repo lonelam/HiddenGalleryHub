@@ -9,11 +9,11 @@ import (
 	"os/signal"
 )
 
-var addr = flag.String("addr", "localhost:5555", "http service address")
+var addr = flag.String("addr", "laizn.com", "http service address")
 var rootDir = flag.String("root", ".", "the root dir to search images")
 
 func main() {
-
+	flag.Parse()
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 

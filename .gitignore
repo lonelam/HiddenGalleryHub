@@ -3,3 +3,5 @@ node_modules
 /output
 /output.zip
 /output.tar.gz
+/server/server.exe
+/client/client.exe
