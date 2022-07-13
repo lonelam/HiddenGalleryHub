@@ -1,0 +1,36 @@
+name: Go and Fe build
+
+on:
+  push:
+    branches: [ "release/*" ]
+  pull_request:
+    branches: [ "release/*" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+        
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3.4.0
+
+    - name: Build
+      run: ./build.sh
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        path: ./output
+    - name: Create Release
+      uses: ncipollo/release-action@v1.10.0
+      with:
+        allowUpdates: true
+        artifacts: ./output
+        prerelease: true
+
