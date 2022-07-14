@@ -52,7 +52,7 @@ func (c *WsClientConnection) onRequestDirectorySendAllDirectories(message []byte
 			if isImage(fileArr[i].Name) {
 				collectThumbnail(filepath.Join(c.rootDir, fileArr[i].RelativePath), &fileArr[i])
 			}
-			if i%100 == 99 {
+			if i%50 == 49 {
 				dirStruct := messages.DirectoryStructureMessage{
 					DirectoryEntries: directoryArr,
 					FileEntries:      fileArr[uploadOffset : i+1],

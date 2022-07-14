@@ -95,33 +95,65 @@ func ProcessDirectoryStructure(machine *models.Machine, msg *messages.DirectoryS
 		dirIdMap[readingDirectory.RelativePath] = readingDirectory.ID
 	}
 	// then update files
+	tx := db.Session(&gorm.Session{
+		SkipDefaultTransaction: false,
+	})
+	tx.Exec("BEGIN TRANSACTION;")
 	for _, file := range msg.FileEntries {
-		var readingFileEntry models.FileEntry
-		result := db.Where(models.FileEntry{
-			RelativePath: file.RelativePath,
-			MachineId:    machine.ID,
-		}).Find(&readingFileEntry)
-		if result.RowsAffected > 0 {
-			readingFileEntry.IsInvalid = false
-			readingFileEntry.Name = file.Name
-			readingFileEntry.FileSize = file.FileSize
-			readingFileEntry.Thumbnail = file.Thumbnail
-			readingFileEntry.ThumbnailHeight = file.ThumbnailHeight
-			readingFileEntry.ThumbnailWidth = file.ThumbnailWidth
-			db.Save(readingFileEntry)
-		} else {
-			readingFileEntry = models.FileEntry{
-				Name:              file.Name,
-				RelativePath:      file.RelativePath,
-				FileSize:          file.FileSize,
-				Thumbnail:         file.Thumbnail,
-				ThumbnailHeight:   file.ThumbnailHeight,
-				ThumbnailWidth:    file.ThumbnailWidth,
-				MachineId:         machine.ID,
-				IsInvalid:         false,
-				ParentDirectoryId: dirIdMap[file.ParentRelativePath],
-			}
-			db.Create(&readingFileEntry)
+		err := tx.Exec(`
+		INSERT INTO
+		file_entries 
+		(
+			created_at,
+			updated_at,
+			name,
+			relative_path,
+			file_size,
+			thumbnail,
+			machine_id,
+			is_invalid,
+			parent_directory_id,
+			thumbnail_height,
+			thumbnail_width
+		)
+		VALUES
+		(
+			CURRENT_TIMESTAMP,
+			CURRENT_TIMESTAMP,
+			?,
+			?,
+			?,
+			?,
+			?,
+			0,
+			(SELECT id FROM directories WHERE relative_path=? and machine_id=? LIMIT 1),
+			?,
+			?
+		)
+		ON CONFLICT(relative_path, machine_id) DO
+		UPDATE
+		SET updated_at = EXCLUDED.updated_at,
+			name = EXCLUDED.name,
+			file_size = EXCLUDED.file_size,
+			thumbnail = EXCLUDED.thumbnail,
+			is_invalid = 0,
+			parent_directory_id = EXCLUDED.parent_directory_id,
+			thumbnail_height = EXCLUDED.thumbnail_height,
+			thumbnail_width = EXCLUDED.thumbnail_width
+		;
+		`, file.Name,
+			file.RelativePath,
+			file.FileSize,
+			file.Thumbnail,
+			machine.ID,
+			file.ParentRelativePath,
+			machine.ID,
+			file.ThumbnailHeight,
+			file.ThumbnailWidth,
+		).Error
+		if err != nil {
+			log.Printf("exec update file SQL err: %v\n", err)
 		}
 	}
+	tx.Exec("COMMIT;")
 }
