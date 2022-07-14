@@ -1,4 +1,4 @@
-const { override, addLessLoader, adjustStyleLoaders, addWebpackResolve } = require("customize-cra");
+const { override, addLessLoader, adjustStyleLoaders, addWebpackResolve, removeModuleScopePlugin } = require("customize-cra");
 
 module.exports = {
   // The Webpack config to use when compiling your react app for development or production.
@@ -8,6 +8,7 @@ module.exports = {
         "path": require.resolve("path-browserify")
       }
     }),
+    removeModuleScopePlugin(),
     addLessLoader({
     lessOptions: {
       strictMath: true,
