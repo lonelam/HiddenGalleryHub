@@ -1,8 +1,14 @@
-const { override, addLessLoader, adjustStyleLoaders } = require("customize-cra");
+const { override, addLessLoader, adjustStyleLoaders, addWebpackResolve } = require("customize-cra");
 
 module.exports = {
   // The Webpack config to use when compiling your react app for development or production.
-  webpack: override(addLessLoader({
+  webpack: override(
+    addWebpackResolve({
+      fallback: {
+        "path": require.resolve("path-browserify")
+      }
+    }),
+    addLessLoader({
     lessOptions: {
       strictMath: true,
       noIeCompat: true,
@@ -41,7 +47,7 @@ module.exports = {
       //   passphrase: process.env.REACT_HTTPS_PASS
       // };
       config.proxy = {
-        "/api": "http://localhost:5555",
+        "/api": { target:"https://laizn.com",secure: false }
       };
       // Return your customised Webpack Development Server config.
       return config;

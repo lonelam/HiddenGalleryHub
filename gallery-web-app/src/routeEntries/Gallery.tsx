@@ -3,8 +3,8 @@ import PhotoAlbum, {  Photo } from "react-photo-album";
 import {  useParams } from "react-router-dom";
 import { getDirStructure,  IGetDirSturectureResponse } from "src/apis/getDirStructure";
 import {  IDirectoryInfo, IFileInfo } from "src/apis/interfaces";
-import DocumentPng from "src/assets/document.png";
 import FolderPng from 'src/assets/folder.png';
+import { CustomPhoto } from "src/components/CustomPhoto";
 import $style from './Gallery.module.less'
 export const DEFAULT_PAGE_SIZE = 30;
 export interface IGalleryPageProps {}
@@ -26,7 +26,7 @@ const breakpoints = [2400, 1080, 640, 384, 256, 128, 96, 64, 48];
 
 export function GalleryPage(props: IGalleryPageProps) {
   const { rootDirId } = useParams();
-  const [pageIndex] = React.useState(0);
+  const [pageIndex, setPageIndex] = React.useState(0);
   const [photos, setPhotos] = React.useState<Photo[]>([]);
   const [subDirs, setSubDirs] = React.useState<IDirectoryInfo[]>([]);
   const [currentDirId, setCurrentDirId] = React.useState(Number(rootDirId ));
@@ -53,7 +53,7 @@ export function GalleryPage(props: IGalleryPageProps) {
     if (dirData && Array.isArray(dirData.SubFiles)) {
       const newPhotos: Photo[] = dirData.SubFiles.map((f: IFileInfo) => {
         return {
-          src: f.Thumbnail || DocumentPng,
+          src: f.Thumbnail || '',
           width: f.ThumbnailWidth,
           height: f.ThumbnailHeight,
           title: f.Name,
@@ -61,14 +61,13 @@ export function GalleryPage(props: IGalleryPageProps) {
           images: breakpoints.map((breakpoint) => {
             const height = Math.round((f.ThumbnailHeight / f.ThumbnailWidth) * breakpoint);
             return {
-                src: f.Thumbnail || DocumentPng,
+                src: f.Thumbnail || '',
                 width: breakpoint,
                 height,
             };
           })
         };
       });
-      console.log(newPhotos)
       setSubDirs(dirData.SubDirs);
       setPhotos(newPhotos);
     }
@@ -80,6 +79,13 @@ export function GalleryPage(props: IGalleryPageProps) {
   const onPhotoClick = React.useCallback((_: any, photo: Photo) => {
     window.open(`/api/file/${photo.key}/${encodeURIComponent(photo.title || '')}`)
   }, [])
+
+  const gotoPrevPage = React.useCallback(() => {
+    setPageIndex(i => i -1);
+  },[]);
+  const gotoNextPage = React.useCallback(() => {
+    setPageIndex(i => i + 1);
+  },[])
   return (
     <div className={$style['gallery-frame']}>
       <div>
@@ -90,11 +96,15 @@ export function GalleryPage(props: IGalleryPageProps) {
         {dirData?.Info.ParentDirectoryId ? <button onClick={gotoParentDir} >
           Go to parent folder
             [{dirData?.Info.ParentDirectoryId}]...</button> : null}
+          
+          <button disabled={pageIndex === 0} onClick={gotoPrevPage}>go prev page</button>
+          <span style={{padding: "3px"}}>{pageIndex}</span>
+          <button disabled={photos.length === 0} onClick={gotoNextPage}>go next page</button>
       </div>
       <div className={$style['subdir-group']}>
         {subDirs.map(dir => <FolderButton key={`folder_${dir.ID}`} directory={dir} setCurrentDirId={setCurrentDirId}/>)}
       </div>
-      <PhotoAlbum padding={4} layout="rows" onClick={onPhotoClick} photos={photos}/>
+      <PhotoAlbum padding={4} layout="rows" onClick={onPhotoClick} photos={photos} renderPhoto={CustomPhoto}/>
     </div>
   );
 }
