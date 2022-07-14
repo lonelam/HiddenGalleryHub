@@ -68,20 +68,24 @@ func AddFileByIdApi(router *gin.Engine, pool *connections.Pool, db *gorm.DB) {
 		c.Header("Content-Length", strconv.FormatUint(uint64(contentLength), 10))
 		done := false
 		respBuffer := make([]byte, 0)
+		respBufferSignal := make(chan struct{})
 		mu := sync.Mutex{}
 		go func() {
 			for {
 				buffer, ok := <-ch
 				if !ok {
 					done = true
+					close(respBufferSignal)
 					return
 				}
 				mu.Lock()
 				respBuffer = append(respBuffer, buffer...)
+				respBufferSignal <- struct{}{}
 				mu.Unlock()
 			}
 		}()
 		for {
+			_, ok := <-respBufferSignal
 			if len(respBuffer) > 0 {
 				mu.Lock()
 				writtenBuffer := respBuffer
@@ -90,7 +94,7 @@ func AddFileByIdApi(router *gin.Engine, pool *connections.Pool, db *gorm.DB) {
 				c.Writer.Write(writtenBuffer)
 			}
 
-			if done {
+			if done || !ok {
 				break
 			}
 		}

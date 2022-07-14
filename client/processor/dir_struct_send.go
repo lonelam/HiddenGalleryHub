@@ -46,21 +46,50 @@ func (c *WsClientConnection) onRequestDirectorySendAllDirectories(message []byte
 	ws.SendMessage(c.conn, messages.MessageTypeDirectoryStructure, dirStructMsg)
 
 	go func() {
-		directoryArr := make([]messages.DirectoryEntry, 1)
-		directoryArr[0] = messages.DirectoryEntry{
-			Name:               path.Base(startPath),
-			RelativePath:       startRelPath,
-			ParentRelativePath: path.Dir(startRelPath),
+		// collectDirectoryStructure(c.rootDir, startPath, &directoryArr, &fileArr, true)
+		uploadOffset := 0
+		for i := 0; i < len(fileArr); i++ {
+			if isImage(fileArr[i].Name) {
+				collectThumbnail(filepath.Join(c.rootDir, fileArr[i].RelativePath), &fileArr[i])
+			}
+			if i%100 == 99 {
+				dirStruct := messages.DirectoryStructureMessage{
+					DirectoryEntries: directoryArr,
+					FileEntries:      fileArr[uploadOffset : i+1],
+				}
+				dirStructMsg, _ := json.Marshal(dirStruct)
+				log.Printf("sending fileArr with thumbnail from %d\n", uploadOffset)
+				ws.SendMessage(c.conn, messages.MessageTypeDirectoryStructure, dirStructMsg)
+				uploadOffset = i + 1
+			}
 		}
-		fileArr := make([]messages.FileEntry, 0)
-		collectDirectoryStructure(c.rootDir, startPath, &directoryArr, &fileArr, true)
 		dirStruct := messages.DirectoryStructureMessage{
 			DirectoryEntries: directoryArr,
-			FileEntries:      fileArr,
+			FileEntries:      fileArr[uploadOffset:],
 		}
 		dirStructMsg, _ := json.Marshal(dirStruct)
+		log.Printf("sending fileArr with thumbnail from %d\n", uploadOffset)
 		ws.SendMessage(c.conn, messages.MessageTypeDirectoryStructure, dirStructMsg)
 	}()
+}
+
+func collectThumbnail(filePath string, fileEntry *messages.FileEntry) {
+	handler, _ := os.Open(filePath)
+	srcImage, _, err := image.Decode(handler)
+	if err != nil {
+		log.Printf("thumbnail decode failed: %s\n", filePath)
+		return
+	}
+	originalHeight := srcImage.Bounds().Max.Y
+	originalWidth := srcImage.Bounds().Max.X
+	fileEntry.ThumbnailWidth = 1024 * originalWidth / originalHeight
+	dstImage := imaging.Resize(srcImage, fileEntry.ThumbnailWidth, 1024, imaging.Lanczos)
+	var buf bytes.Buffer
+	writer := bufio.NewWriter(&buf)
+	jpeg.Encode(writer, dstImage, &jpeg.Options{})
+	jpgImage := buf.Bytes()
+	fileEntry.Thumbnail = fmt.Sprintf("data:image/jpeg;base64,%s", base64.RawStdEncoding.EncodeToString(jpgImage))
+	// log.Printf("thumbnail generated for %s\n", filePath)
 }
 
 func collectDirectoryStructure(rootPath string, startPath string, directoryArr *[]messages.DirectoryEntry, fileArr *[]messages.FileEntry, extractThumbnail bool) {
@@ -81,32 +110,21 @@ func collectDirectoryStructure(rootPath string, startPath string, directoryArr *
 			collectDirectoryStructure(rootPath, filepath.Join(startPath, dirEntry.Name()), directoryArr, fileArr, extractThumbnail)
 		} else {
 			fileInfo, _ := dirEntry.Info()
-			thumbnail := ""
-			thumbnailWidth := 1024
-			thumbnailHeight := 1024
-			if extractThumbnail && isImage(dirEntry.Name()) {
-				handler, _ := os.Open(filepath.Join(startPath, dirEntry.Name()))
-				srcImage, _, _ := image.Decode(handler)
-				originalHeight := srcImage.Bounds().Max.Y
-				originalWidth := srcImage.Bounds().Max.X
-				thumbnailWidth = 1024 * originalWidth / originalHeight
-				dstImage := imaging.Resize(srcImage, thumbnailWidth, 1024, imaging.Lanczos)
-				var buf bytes.Buffer
-				writer := bufio.NewWriter(&buf)
-				jpeg.Encode(writer, dstImage, &jpeg.Options{})
-				jpgImage := buf.Bytes()
-				thumbnail = fmt.Sprintf("data:image/jpeg;base64,%s", base64.RawStdEncoding.EncodeToString(jpgImage))
-				log.Printf("thumbnail generated for %s\n", filepath.Join(startPath, dirEntry.Name()))
-			}
-			*fileArr = append(*fileArr, messages.FileEntry{
+			var fileEntry = messages.FileEntry{
 				Name:               dirEntry.Name(),
 				RelativePath:       filepath.Join(parentRelPath, dirEntry.Name()),
 				ParentRelativePath: parentRelPath,
 				FileSize:           uint(fileInfo.Size()),
-				Thumbnail:          thumbnail,
-				ThumbnailHeight:    thumbnailHeight,
-				ThumbnailWidth:     thumbnailWidth,
-			})
+				Thumbnail:          "",
+				ThumbnailHeight:    1024,
+				ThumbnailWidth:     1024,
+			}
+
+			if extractThumbnail && isImage(dirEntry.Name()) {
+				collectThumbnail(filepath.Join(startPath, dirEntry.Name()), &fileEntry)
+			}
+
+			*fileArr = append(*fileArr, fileEntry)
 		}
 	}
 }

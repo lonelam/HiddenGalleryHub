@@ -50,6 +50,13 @@ func (pool *Pool) ProcessMachineInfo(msg *messages.MachineInfoMessage, conn *web
 		log.Fatal(err)
 	}
 
+	// set all data invalid
+	db.Model(&models.Directory{}).Where(&models.Directory{
+		MachineId: machine.ID,
+	}).UpdateColumn("is_invalid", 1)
+	db.Model(&models.FileEntry{}).Where(&models.FileEntry{
+		MachineId: machine.ID,
+	}).UpdateColumn("is_invalid", 1)
 	pool.ConnectionMap[machine.Name] = conn
 	pool.MutexMap[machine.Name] = &sync.Mutex{}
 	// get directory structure after machine is online.
@@ -61,14 +68,6 @@ func (pool *Pool) ProcessMachineInfo(msg *messages.MachineInfoMessage, conn *web
 }
 
 func ProcessDirectoryStructure(machine *models.Machine, msg *messages.DirectoryStructureMessage, db *gorm.DB) {
-	// set all entries in the machine as invalid first
-	db.Model(&models.Directory{}).Where(&models.Directory{
-		MachineId: machine.ID,
-	}).UpdateColumn("is_invalid", 1)
-	db.Model(&models.FileEntry{}).Where(&models.FileEntry{
-		MachineId: machine.ID,
-	}).UpdateColumn("is_invalid", 1)
-
 	dirIdMap := make(map[string]uint)
 
 	// firstly update directories
