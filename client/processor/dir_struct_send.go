@@ -23,7 +23,8 @@ import (
 func (c *WsClientConnection) onRequestDirectorySendAllDirectories(message []byte) {
 	requestDirectory, err := messages.ReadRequestDirectoryMessage(message)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		c.conn.Close()
 		return
 	}
 	startPath := filepath.Join(c.rootDir, requestDirectory.RelativePath)
@@ -96,7 +97,7 @@ func collectDirectoryStructure(rootPath string, startPath string, directoryArr *
 	parentRelPath, _ := filepath.Rel(rootPath, startPath)
 	dirEntries, err := os.ReadDir(startPath)
 	if err != nil {
-		log.Fatalf("readDir %s failed, err: %v", startPath, err)
+		log.Printf("readDir %s failed, err: %v", startPath, err)
 		return
 	}
 	log.Printf("parsing %s\n", parentRelPath)

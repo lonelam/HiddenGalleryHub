@@ -20,5 +20,6 @@ func RunWithWebsocketUpgrader(host string, pool *connections.Pool, db *gorm.DB) 
 	router.StaticFile("/favicon.ico", "./build/favicon.ico")
 	router.StaticFile("/manifest.json", "./build/manifest.json")
 	router.StaticFile("/", "./build/index.html")
+	router.StaticFile("/gallery", "./build/index.html")
 	router.Run(host)
 }

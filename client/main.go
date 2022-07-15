@@ -26,7 +26,11 @@ func main() {
 	log.Printf("connecting to %s", u.String())
 
 	for {
-		c := processor.CreateWsConnection(u.String(), *rootDir, *name)
+		c, err := processor.CreateWsConnection(u.String(), *rootDir, *name)
+		if err != nil {
+			log.Printf("CreateWsConnection error: %v\n", err)
+			continue
+		}
 		done := c.StartUp()
 		select {
 		case <-done:

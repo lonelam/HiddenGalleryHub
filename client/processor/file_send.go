@@ -14,7 +14,8 @@ func (c *WsClientConnection) onRequestFileSendFilePieceByPiece(message []byte) {
 	defer c.fileMu.Unlock()
 	requestFile, err := messages.ReadRequestFileMessage(message)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		c.conn.Close()
 		return
 	}
 	openFileHandler, err := os.OpenFile(filepath.Join(c.rootDir, requestFile.RelativePath), os.O_RDONLY, 0755)
@@ -39,7 +40,7 @@ func (c *WsClientConnection) onRequestFileSendFilePieceByPiece(message []byte) {
 		log.Printf("file buffer read(%d) send with len(%d)\n", currentReadSize, len(sendingBuffer))
 		err = ws.SendMessage(c.conn, messages.MessageTypeFileContent, sendingBuffer)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 			return
 		}
 	}

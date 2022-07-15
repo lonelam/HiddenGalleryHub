@@ -18,11 +18,12 @@ type WsClientConnection struct {
 	name    string
 }
 
-func CreateWsConnection(url string, rootDir string, name string) *WsClientConnection {
+func CreateWsConnection(url string, rootDir string, name string) (*WsClientConnection, error) {
 
 	c, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Println("dial:", err)
+		return nil, err
 	}
 	return &WsClientConnection{
 		conn:    c,
@@ -32,7 +33,7 @@ func CreateWsConnection(url string, rootDir string, name string) *WsClientConnec
 		},
 		fileMu: &sync.Mutex{},
 		name:   name,
-	}
+	}, nil
 }
 
 func (c *WsClientConnection) StartUp() chan struct{} {
